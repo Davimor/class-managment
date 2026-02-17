@@ -6,10 +6,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Mark server-only packages that use Node.js built-ins
-  experimental: {
-    serverComponentsExternalPackages: ['mssql', 'bcryptjs', 'jsonwebtoken'],
-  },
 }
 
 export default nextConfig
