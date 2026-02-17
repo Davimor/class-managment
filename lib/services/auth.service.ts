@@ -1,3 +1,5 @@
+'use server';
+
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { query, queryOne } from '@/lib/db';

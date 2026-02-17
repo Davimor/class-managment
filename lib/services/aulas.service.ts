@@ -1,3 +1,5 @@
+'use server';
+
 import { query, queryOne } from '@/lib/db';
 import {
   Aula,
