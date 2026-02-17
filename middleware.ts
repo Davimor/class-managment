@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/services/auth.service';
+import { verifyTokenEdge } from '@/lib/auth-edge';
 
 // Rutas públicas que no requieren autenticación
 const publicRoutes = ['/', '/api/auth/login'];
@@ -10,7 +10,7 @@ const roleBasedRoutes: Record<string, string[]> = {
   '/dashboard/reportes': ['admin', 'maestro'],
 };
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Verificar si es ruta pública
@@ -32,8 +32,8 @@ export function middleware(request: NextRequest) {
   }
 
   try {
-    // Verificar el token
-    const decoded = verifyToken(token || '');
+    // Verificar el token (async con Web Crypto API)
+    const decoded = await verifyTokenEdge(token || '');
 
     // Verificar permisos de rol
     const allowedRoles = roleBasedRoutes[pathname];
@@ -46,7 +46,7 @@ export function middleware(request: NextRequest) {
 
     // Agregar información del usuario al header para usar en la ruta
     const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-user-id', decoded.userId);
+    requestHeaders.set('x-user-id', decoded.userId.toString());
     requestHeaders.set('x-user-email', decoded.email);
     requestHeaders.set('x-user-role', decoded.role);
 
