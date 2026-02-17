@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/services/auth.service';
+import { verifyTokenEdge } from '@/lib/auth-edge';
 import { mockCursos } from '@/lib/mock-data';
 import { getAllCursos, getCursosByTipo, createCurso } from '@/lib/services/cursos.service';
 
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 });
     }
 
-    const decoded = verifyToken(token);
+    const decoded = await verifyTokenEdge(token);
     if (!decoded) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 });
     }
 
-    const decoded = verifyToken(token);
+    const decoded = await verifyTokenEdge(token);
     if (!decoded || !['admin', 'secretaria'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Permiso denegado' }, { status: 403 });
     }

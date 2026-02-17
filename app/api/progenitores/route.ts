@@ -7,7 +7,7 @@ import {
   deleteProgenitor,
   searchProgenitors,
 } from '@/lib/services/alumnos.service';
-import { verifyToken } from '@/lib/services/auth.service';
+import { verifyAuth, verifyAuthAndRole } from '@/lib/api-auth';
 import { CreateProgenitorRequest, UpdateProgenitorRequest } from '@/lib/types';
 
 /**
@@ -15,14 +15,8 @@ import { CreateProgenitorRequest, UpdateProgenitorRequest } from '@/lib/types';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verificar autenticación
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    verifyToken(token); // Lanzará error si es inválido
+    const { decoded, error } = await verifyAuth(request);
+    if (error) return error;
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
@@ -48,14 +42,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Verificar autenticación
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    verifyToken(token); // Lanzará error si es inválido
+    const { decoded, error } = await verifyAuth(request);
+    if (error) return error;
 
     const body: CreateProgenitorRequest = await request.json();
 
@@ -87,15 +75,8 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-
-    // Verificar autenticación
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    verifyToken(token); // Lanzará error si es inválido
+    const { decoded, error } = await verifyAuth(request);
+    if (error) return error;
 
     if (!id) {
       return NextResponse.json({ error: 'ID de progenitor requerido' }, { status: 400 });
@@ -122,20 +103,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-
-    // Verificar autenticación
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = verifyToken(token); // Lanzará error si es inválido
-
-    // Solo admin puede eliminar
-    if (decoded.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const { decoded, error } = await verifyAuthAndRole(request, ['admin']);
+    if (error) return error;
 
     if (!id) {
       return NextResponse.json({ error: 'ID de progenitor requerido' }, { status: 400 });

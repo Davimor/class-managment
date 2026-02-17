@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/services/auth.service';
+import { verifyAuthAndRole } from '@/lib/api-auth';
 import { mockAlumnos } from '@/lib/mock-data';
 
 /**
@@ -7,17 +7,8 @@ import { mockAlumnos } from '@/lib/mock-data';
  */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-
-    if (!token) {
-      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
-    }
+    const { decoded, error } = await verifyAuthAndRole(request, ['admin', 'secretaria', 'maestro']);
+    if (error) return error;
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
@@ -46,17 +37,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-
-    if (!token) {
-      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || !['admin', 'secretaria'].includes(decoded.role)) {
-      return NextResponse.json({ error: 'Permiso denegado' }, { status: 403 });
-    }
+    const { decoded, error } = await verifyAuthAndRole(request, ['admin', 'secretaria']);
+    if (error) return error;
 
     const body = await request.json();
 

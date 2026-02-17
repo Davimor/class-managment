@@ -7,7 +7,7 @@ import {
   deleteMaestro,
   searchMaestros,
 } from '@/lib/services/aulas.service';
-import { verifyToken } from '@/lib/services/auth.service';
+import { verifyAuth, verifyAuthAndRole } from '@/lib/api-auth';
 import { CreateMaestroRequest, UpdateMaestroRequest } from '@/lib/types';
 
 /**
@@ -15,14 +15,8 @@ import { CreateMaestroRequest, UpdateMaestroRequest } from '@/lib/types';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verificar autenticación
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    verifyToken(token); // Lanzará error si es inválido
+    const { decoded, error } = await verifyAuth(request);
+    if (error) return error;
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
@@ -48,18 +42,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Verificar token y rol
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = verifyToken(token);
-
-    if (decoded.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const { decoded, error } = await verifyAuthAndRole(request, ['admin']);
+    if (error) return error;
 
     const body: CreateMaestroRequest = await request.json();
 
@@ -91,23 +75,16 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-
-    // Verificar token y rol
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = verifyToken(token);
+    const { decoded, error } = await verifyAuth(request);
+    if (error) return error;
 
     // Solo admin y el mismo maestro pueden actualizar
-    if (decoded.role === 'maestro') {
+    if (decoded && decoded.role === 'maestro') {
       const maestro = await getMaestroById(parseInt(id || '0'));
       if (maestro?.UserId !== decoded.userId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
-    } else if (decoded.role !== 'admin') {
+    } else if (decoded && decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -136,19 +113,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-
-    // Verificar token y rol
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = verifyToken(token);
-
-    if (decoded.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const { decoded, error } = await verifyAuthAndRole(request, ['admin']);
+    if (error) return error;
 
     if (!id) {
       return NextResponse.json({ error: 'ID de maestro requerido' }, { status: 400 });
