@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAuthAndRole } from '@/lib/api-auth';
 import { mockAlumnos } from '@/lib/mock-data';
 
 /**
@@ -7,9 +6,6 @@ import { mockAlumnos } from '@/lib/mock-data';
  */
 export async function GET(request: NextRequest) {
   try {
-    const { decoded, error } = await verifyAuthAndRole(request, ['admin', 'secretaria', 'maestro']);
-    if (error) return error;
-
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
 
@@ -37,9 +33,6 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { decoded, error } = await verifyAuthAndRole(request, ['admin', 'secretaria']);
-    if (error) return error;
-
     const body = await request.json();
 
     if (!body.NombreCompleto || !body.FechaNacimiento) {
@@ -54,6 +47,8 @@ export async function POST(request: NextRequest) {
       ...body,
       FechaIngreso: new Date(),
     };
+
+    mockAlumnos.push(newAlumno);
 
     return NextResponse.json({ success: true, data: newAlumno }, { status: 201 });
   } catch (error: any) {

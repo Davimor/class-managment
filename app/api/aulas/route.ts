@@ -1,33 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  getAllAulas,
-  getAulaById,
-  createAula,
-  updateAula,
-  deleteAula,
-  searchAulas,
-} from '@/lib/services/aulas.service';
-import { verifyAuth, verifyAuthAndRole } from '@/lib/api-auth';
-import { CreateAulaRequest, UpdateAulaRequest } from '@/lib/types';
+import { mockAulas } from '@/lib/mock-data';
 
 /**
  * GET /api/aulas - Obtiene todas las aulas
  */
 export async function GET(request: NextRequest) {
   try {
-    const { decoded, error } = await verifyAuth(request);
-    if (error) return error;
-
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
 
     if (search) {
-      const results = await searchAulas(search);
+      const results = mockAulas.filter(
+        (a) =>
+          a.Nombre.toLowerCase().includes(search.toLowerCase())
+      );
       return NextResponse.json(results);
     }
 
-    const aulas = await getAllAulas();
-    return NextResponse.json(aulas);
+    return NextResponse.json(mockAulas);
   } catch (error: any) {
     console.error('[API] Error en GET aulas:', error);
     return NextResponse.json(
@@ -38,84 +28,31 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/aulas - Crea una nueva aula (solo admin y secretaría)
+ * POST /api/aulas - Crea una nueva aula
  */
 export async function POST(request: NextRequest) {
   try {
-    const { decoded, error } = await verifyAuthAndRole(request, ['admin', 'secretaria']);
-    if (error) return error;
+    const body = await request.json();
 
-    const body: CreateAulaRequest = await request.json();
-
-    // Validar entrada
-    if (!body.Name) {
+    if (!body.Nombre) {
       return NextResponse.json(
         { error: 'El nombre del aula es requerido' },
         { status: 400 }
       );
     }
 
-    const aula = await createAula(body);
-    return NextResponse.json(aula, { status: 201 });
+    const newAula = {
+      AulaId: Math.max(...mockAulas.map((a) => a.AulaId || 0)) + 1,
+      ...body,
+    };
+
+    mockAulas.push(newAula);
+
+    return NextResponse.json(newAula, { status: 201 });
   } catch (error: any) {
     console.error('[API] Error en POST aulas:', error);
     return NextResponse.json(
       { error: error.message || 'Error al crear aula' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * PUT /api/aulas/[id] - Actualiza un aula
- */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id?: string }> }
-) {
-  try {
-    const { id } = await params;
-    const { decoded, error } = await verifyAuthAndRole(request, ['admin', 'secretaria']);
-    if (error) return error;
-
-    if (!id) {
-      return NextResponse.json({ error: 'ID de aula requerido' }, { status: 400 });
-    }
-
-    const body: UpdateAulaRequest = await request.json();
-    const aula = await updateAula(parseInt(id), body);
-    return NextResponse.json(aula);
-  } catch (error: any) {
-    console.error('[API] Error en PUT aulas:', error);
-    return NextResponse.json(
-      { error: error.message || 'Error al actualizar aula' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * DELETE /api/aulas/[id] - Elimina un aula
- */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id?: string }> }
-) {
-  try {
-    const { id } = await params;
-    const { decoded, error } = await verifyAuthAndRole(request, ['admin']);
-    if (error) return error;
-
-    if (!id) {
-      return NextResponse.json({ error: 'ID de aula requerido' }, { status: 400 });
-    }
-
-    await deleteAula(parseInt(id));
-    return NextResponse.json({ message: 'Aula eliminada exitosamente' });
-  } catch (error: any) {
-    console.error('[API] Error en DELETE aulas:', error);
-    return NextResponse.json(
-      { error: error.message || 'Error al eliminar aula' },
       { status: 500 }
     );
   }
