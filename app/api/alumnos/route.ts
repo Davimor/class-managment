@@ -15,10 +15,10 @@ export async function GET(request: NextRequest) {
           a.NombreCompleto.toLowerCase().includes(search.toLowerCase()) ||
           a.Email?.toLowerCase().includes(search.toLowerCase())
       );
-      return NextResponse.json({ success: true, data: results });
+      return NextResponse.json(results);
     }
 
-    return NextResponse.json({ success: true, data: mockAlumnos });
+    return NextResponse.json(mockAlumnos);
   } catch (error: any) {
     console.error('[API] Error en GET alumnos:', error);
     return NextResponse.json(
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     mockAlumnos.push(newAlumno);
 
-    return NextResponse.json({ success: true, data: newAlumno }, { status: 201 });
+    return NextResponse.json(newAlumno, { status: 201 });
   } catch (error: any) {
     console.error('[API] Error en POST alumnos:', error);
     return NextResponse.json(

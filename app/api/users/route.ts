@@ -1,25 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyTokenEdge } from '@/lib/auth-edge';
 import { mockUsers } from '@/lib/mock-data';
 
 /**
- * GET /api/users - Obtiene todos los usuarios (solo admin)
+ * GET /api/users - Obtiene todos los usuarios
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verificar token y rol
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = await verifyTokenEdge(token);
-
-    if (decoded.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     // Usar mock data para desarrollo
     const usersWithoutPasswords = mockUsers.map((user) => ({
       ...user,
