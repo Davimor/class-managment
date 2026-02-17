@@ -1,4 +1,3 @@
-import { query, queryOne } from '@/lib/db';
 import {
   Aula,
   Maestro,
@@ -9,6 +8,7 @@ import {
   UpdateMaestroRequest,
   User,
 } from '@/lib/types';
+import { mockAulas, mockMaestros } from '@/lib/mock-data';
 
 // ========== SERVICIOS PARA AULAS ==========
 

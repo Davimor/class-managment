@@ -1,4 +1,3 @@
-import { query, queryOne } from '@/lib/db';
 import {
   Alumno,
   Progenitor,
@@ -8,6 +7,7 @@ import {
   CreateProgenitorRequest,
   UpdateProgenitorRequest,
 } from '@/lib/types';
+import { mockAlumnos } from '@/lib/mock-data';
 
 // ========== SERVICIOS PARA ALUMNOS ==========
 
