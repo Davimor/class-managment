@@ -1,6 +1,7 @@
-'use server';
-
-import sql from 'mssql';
+/**
+ * Database module - uses dynamic import for mssql to avoid
+ * Turbopack bundling node:stream at build time.
+ */
 
 // Configuración de conexión a MSSQL
 const config = {
@@ -8,7 +9,7 @@ const config = {
   port: parseInt(process.env.MSSQL_PORT || '1433'),
   database: process.env.MSSQL_DATABASE || 'catequesis',
   authentication: {
-    type: process.env.MSSQL_AUTH_TYPE === 'windows' ? 'default' : 'basic',
+    type: (process.env.MSSQL_AUTH_TYPE === 'windows' ? 'default' : 'basic') as any,
     options: {
       userName: process.env.MSSQL_USER || 'sa',
       password: process.env.MSSQL_PASSWORD || '',
@@ -24,17 +25,22 @@ const config = {
   },
 };
 
-// Pool de conexiones
-let connectionPool: sql.ConnectionPool | null = null;
-let connectionError: Error | null = null;
+// Pool de conexiones (lazy loaded)
+let connectionPool: any = null;
 let isConnecting = false;
 
 /**
- * Obtiene o crea el pool de conexiones a MSSQL
- * Si las credenciales no están configuradas, retorna un error
+ * Dynamically imports mssql to avoid Turbopack resolving node:stream at build time
  */
-export async function getConnectionPool(): Promise<sql.ConnectionPool> {
-  // Validar que tengamos credenciales mínimas
+async function getMssql() {
+  const sql = await import('mssql');
+  return sql.default || sql;
+}
+
+/**
+ * Obtiene o crea el pool de conexiones a MSSQL
+ */
+export async function getConnectionPool() {
   if (!process.env.MSSQL_SERVER || !process.env.MSSQL_USER) {
     throw new Error(
       'Credenciales MSSQL no configuradas. Por favor configura MSSQL_SERVER, MSSQL_USER, MSSQL_PASSWORD en tu archivo .env.local'
@@ -47,7 +53,6 @@ export async function getConnectionPool(): Promise<sql.ConnectionPool> {
     }
 
     if (isConnecting) {
-      // Evitar múltiples conexiones simultáneas
       await new Promise(resolve => setTimeout(resolve, 100));
       if (connectionPool && connectionPool.connected) {
         return connectionPool;
@@ -55,30 +60,28 @@ export async function getConnectionPool(): Promise<sql.ConnectionPool> {
     }
 
     isConnecting = true;
+    const sql = await getMssql();
     connectionPool = new sql.ConnectionPool(config);
 
     await connectionPool.connect();
-    console.log('[MSSQL] Conexión exitosa a la base de datos');
-    connectionError = null;
+    console.log('[MSSQL] Conexion exitosa a la base de datos');
     isConnecting = false;
 
-    connectionPool.on('error', (err) => {
+    connectionPool.on('error', (err: any) => {
       console.error('[MSSQL] Error en pool:', err);
       connectionPool = null;
-      connectionError = err;
     });
 
     return connectionPool;
   } catch (error) {
     isConnecting = false;
-    connectionError = error as Error;
     console.error('[MSSQL] Error al conectar:', error);
     throw error;
   }
 }
 
 /**
- * Cierra la conexión del pool
+ * Cierra la conexion del pool
  */
 export async function closeConnectionPool(): Promise<void> {
   if (connectionPool && connectionPool.connected) {
@@ -96,7 +99,6 @@ export async function query<T>(queryString: string, params?: Record<string, any>
     const pool = await getConnectionPool();
     const request = pool.request();
 
-    // Agregar parámetros a la consulta
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         request.input(key, value);
@@ -112,7 +114,7 @@ export async function query<T>(queryString: string, params?: Record<string, any>
 }
 
 /**
- * Ejecuta una consulta que retorna un único registro
+ * Ejecuta una consulta que retorna un unico registro
  */
 export async function queryOne<T>(queryString: string, params?: Record<string, any>): Promise<T | null> {
   const results = await query<T>(queryString, params);
@@ -145,10 +147,11 @@ export async function executeStoredProcedure<T>(
 }
 
 /**
- * Inicia una transacción
+ * Inicia una transaccion
  */
-export async function beginTransaction(): Promise<sql.ConnectionPool> {
+export async function beginTransaction() {
   const pool = await getConnectionPool();
+  const sql = await getMssql();
   const transaction = new sql.Transaction(pool);
   await transaction.begin();
   return pool;

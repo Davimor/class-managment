@@ -1,32 +1,46 @@
-'use server';
+/**
+ * Auth service - uses dynamic imports for bcryptjs and jsonwebtoken
+ * to avoid Turbopack bundling node:stream at build time.
+ */
 
-import bcryptjs from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { query, queryOne } from '@/lib/db';
 import { User, LoginRequest, AuthResponse } from '@/lib/types';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key-must-be-changed';
 const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '7d';
 
+async function getBcrypt() {
+  const mod = await import('bcryptjs');
+  return mod.default || mod;
+}
+
+async function getJwt() {
+  const mod = await import('jsonwebtoken');
+  return mod.default || mod;
+}
+
 /**
- * Hashea una contraseña
+ * Hashea una contrasena
  */
 export async function hashPassword(password: string): Promise<string> {
+  const bcryptjs = await getBcrypt();
   const salt = await bcryptjs.genSalt(10);
   return bcryptjs.hash(password, salt);
 }
 
 /**
- * Compara una contraseña con su hash
+ * Compara una contrasena con su hash
  */
 export async function comparePassword(password: string, hash: string): Promise<boolean> {
+  const bcryptjs = await getBcrypt();
   return bcryptjs.compare(password, hash);
 }
 
 /**
  * Crea un JWT token
  */
-export function createToken(userId: number, email: string, role: string): string {
+export async function createToken(userId: number, email: string, role: string): Promise<string> {
+  const jwt = await getJwt();
   return jwt.sign(
     { userId, email, role },
     JWT_SECRET,
@@ -37,11 +51,12 @@ export function createToken(userId: number, email: string, role: string): string
 /**
  * Verifica y decodifica un JWT token
  */
-export function verifyToken(token: string): any {
+export async function verifyToken(token: string): Promise<any> {
+  const jwt = await getJwt();
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch (error) {
-    throw new Error('Token inválido o expirado');
+    throw new Error('Token invalido o expirado');
   }
 }
 
@@ -51,32 +66,29 @@ export function verifyToken(token: string): any {
 export async function authenticateUser(loginRequest: LoginRequest): Promise<AuthResponse> {
   const { email, password } = loginRequest;
 
-  // Buscar el usuario por email
   const user = await queryOne<User>(
     'SELECT * FROM Users WHERE Email = @email AND IsActive = 1',
     { email }
   );
 
   if (!user) {
-    throw new Error('Credenciales inválidas');
+    throw new Error('Credenciales invalidas');
   }
 
-  // Verificar contraseña
   const isPasswordValid = await comparePassword(password, user.PasswordHash);
   if (!isPasswordValid) {
-    throw new Error('Credenciales inválidas');
+    throw new Error('Credenciales invalidas');
   }
 
-  // Crear token JWT
-  const token = createToken(user.UserId, user.Email, user.Role);
+  const token = await createToken(user.UserId, user.Email, user.Role);
 
   return {
     token,
     user: {
       ...user,
-      PasswordHash: '', // No retornar el hash
+      PasswordHash: '',
     },
-    expiresIn: 7 * 24 * 60 * 60, // 7 días en segundos
+    expiresIn: 7 * 24 * 60 * 60,
   };
 }
 
@@ -109,21 +121,17 @@ export async function createUser(
   fullName: string,
   role: 'admin' | 'maestro' | 'secretaria' = 'maestro'
 ): Promise<User> {
-  // Verificar si el email ya existe
   const existingUser = await getUserByEmail(email);
   if (existingUser) {
-    throw new Error('El email ya está registrado');
+    throw new Error('El email ya esta registrado');
   }
 
-  // Hashear contraseña
   const passwordHash = await hashPassword(password);
 
-  // Validar contraseña segura (mínimo 8 caracteres)
   if (password.length < 8) {
-    throw new Error('La contraseña debe tener al menos 8 caracteres');
+    throw new Error('La contrasena debe tener al menos 8 caracteres');
   }
 
-  // Insertar el usuario
   const result = await query<any>(
     `INSERT INTO Users (Email, PasswordHash, FullName, Role, IsActive, CreatedAt, UpdatedAt)
      VALUES (@email, @passwordHash, @fullName, @role, 1, GETDATE(), GETDATE());

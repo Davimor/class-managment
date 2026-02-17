@@ -1,5 +1,3 @@
-'use server';
-
 import { verifyTokenEdge } from './auth-edge';
 import { NextRequest, NextResponse } from 'next/server';
 
