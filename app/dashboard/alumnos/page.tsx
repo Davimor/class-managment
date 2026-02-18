@@ -44,10 +44,9 @@ export default function AlumnosPage() {
       setFilteredAlumnos(
         alumnos.filter(
           (alumno) =>
-            alumno.FirstName.toLowerCase().includes(term) ||
-            alumno.LastName.toLowerCase().includes(term) ||
+            alumno.NombreCompleto?.toLowerCase().includes(term) ||
             alumno.Email?.toLowerCase().includes(term) ||
-            alumno.DocumentNumber?.includes(term)
+            alumno.Telefono?.includes(term)
         )
       );
     }
