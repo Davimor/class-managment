@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockAulas } from '@/lib/mock-data';
+import { mockClases } from '@/lib/mock-data';
 
 /**
  * GET /api/aulas - Obtiene todas las aulas
@@ -10,14 +10,14 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
 
     if (search) {
-      const results = mockAulas.filter(
+      const results = mockClases.filter(
         (a) =>
           a.Nombre.toLowerCase().includes(search.toLowerCase())
       );
       return NextResponse.json(results);
     }
 
-    return NextResponse.json(mockAulas);
+    return NextResponse.json(mockClases);
   } catch (error: any) {
     console.error('[API] Error en GET aulas:', error);
     return NextResponse.json(
@@ -42,11 +42,11 @@ export async function POST(request: NextRequest) {
     }
 
     const newAula = {
-      AulaId: Math.max(...mockAulas.map((a) => a.AulaId || 0)) + 1,
+      ClaseId: Math.max(...mockClases.map((a) => a.ClaseId || 0)) + 1,
       ...body,
     };
 
-    mockAulas.push(newAula);
+    mockClases.push(newAula);
 
     return NextResponse.json(newAula, { status: 201 });
   } catch (error: any) {
