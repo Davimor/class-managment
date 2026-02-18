@@ -129,7 +129,9 @@ export function AlumnoFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{alumno ? 'Editar Alumno' : 'Nuevo Alumno'}</DialogTitle>
+          <DialogTitle>
+            {alumno ? 'Editar Alumno' : 'Nuevo Alumno'}
+          </DialogTitle>
           <DialogDescription>
             {alumno ? 'Actualiza la información del alumno' : 'Completa los datos del nuevo alumno'}
           </DialogDescription>
