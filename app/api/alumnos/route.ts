@@ -35,17 +35,34 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.NombreCompleto || !body.FechaNacimiento) {
+    // Convertir FirstName + LastName a NombreCompleto
+    const nombreCompleto = body.FirstName && body.LastName 
+      ? `${body.FirstName} ${body.LastName}` 
+      : body.NombreCompleto;
+
+    if (!nombreCompleto) {
       return NextResponse.json(
-        { error: 'Nombre y fecha de nacimiento son requeridos' },
+        { error: 'Nombre es requerido' },
         { status: 400 }
       );
     }
 
     const newAlumno = {
       AlumnoId: Math.max(...mockAlumnos.map((a) => a.AlumnoId || 0)) + 1,
-      ...body,
+      NombreCompleto: nombreCompleto,
+      Email: body.Email,
+      Telefono: body.Telefono || body.Phone,
+      Documento: body.DocumentNumber,
+      FechaNacimiento: body.DateOfBirth,
+      Genero: body.Gender,
       FechaIngreso: new Date(),
+      // También retornar los campos esperados por el componente
+      FirstName: body.FirstName,
+      LastName: body.LastName,
+      DocumentNumber: body.DocumentNumber,
+      Phone: body.Telefono || body.Phone,
+      DateOfBirth: body.DateOfBirth,
+      Gender: body.Gender,
     };
 
     mockAlumnos.push(newAlumno);

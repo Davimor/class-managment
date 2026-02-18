@@ -56,7 +56,18 @@ export default function AlumnosPage() {
     try {
       setIsLoading(true);
       const data = await apiGet('/api/alumnos');
-      setAlumnos(data || []);
+      
+      // Transformar datos para asegurar que tienen los campos esperados
+      const transformedData = (data || []).map((alumno: any) => ({
+        ...alumno,
+        // Si tiene NombreCompleto pero no FirstName/LastName, dividir
+        FirstName: alumno.FirstName || (alumno.NombreCompleto?.split(' ')[0] ?? ''),
+        LastName: alumno.LastName || (alumno.NombreCompleto?.split(' ').slice(1).join(' ') ?? ''),
+        Phone: alumno.Phone || alumno.Telefono,
+        DateOfBirth: alumno.DateOfBirth || alumno.FechaNacimiento,
+      }));
+      
+      setAlumnos(transformedData);
     } catch (error: any) {
       console.error('[v0] Error loading alumnos:', error);
       toast({
@@ -105,7 +116,12 @@ export default function AlumnosPage() {
     setEditingAlumno(null);
   }
 
-  function handleFormSuccess(alumno: Alumno) {
+  function handleFormSuccess(alumno: Alumno | any) {
+    if (!alumno?.AlumnoId) {
+      console.error('[v0] Alumno sin AlumnoId:', alumno);
+      return;
+    }
+    
     if (editingAlumno) {
       setAlumnos(alumnos.map((a) => (a.AlumnoId === alumno.AlumnoId ? alumno : a)));
     } else {
