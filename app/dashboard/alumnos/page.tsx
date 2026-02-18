@@ -202,7 +202,7 @@ export default function AlumnosPage() {
                   {filteredAlumnos.map((alumno) => (
                     <TableRow key={alumno.AlumnoId}>
                       <TableCell className="font-medium">
-                        {alumno.FirstName} {alumno.LastName}
+                        {alumno.NombreCompleto || `${alumno.FirstName || ''} ${alumno.LastName || ''}`.trim()}
                       </TableCell>
                       <TableCell>{alumno.DocumentNumber || '-'}</TableCell>
                       <TableCell>{alumno.Email || '-'}</TableCell>

@@ -29,7 +29,7 @@ export async function PUT(
 
     const updatedAlumno = {
       ...mockAlumnos[alumnoIndex],
-      NombreCompleto: nombreCompleto,
+      NombreCompleto: nombreCompleto || mockAlumnos[alumnoIndex].NombreCompleto,
       FirstName: body.FirstName || mockAlumnos[alumnoIndex].FirstName,
       LastName: body.LastName || mockAlumnos[alumnoIndex].LastName,
       Email: body.Email ?? mockAlumnos[alumnoIndex].Email,
@@ -44,6 +44,7 @@ export async function PUT(
       PostalCode: body.PostalCode ?? mockAlumnos[alumnoIndex].PostalCode,
       SpecialNeeds: body.SpecialNeeds ?? mockAlumnos[alumnoIndex].SpecialNeeds,
       MedicalInfo: body.MedicalInfo ?? mockAlumnos[alumnoIndex].MedicalInfo,
+      ClaseId: body.ClaseId ?? mockAlumnos[alumnoIndex].ClaseId,
     };
 
     // Actualizar en mock data
