@@ -21,7 +21,7 @@ export async function apiCall(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const url = endpoint.startsWith('http') ? endpoint : `/api${endpoint}`;
+  const url = endpoint.startsWith('http') ? endpoint : endpoint;
 
   try {
     const response = await fetch(url, {
