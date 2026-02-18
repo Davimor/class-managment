@@ -2,8 +2,6 @@
  * Helper para hacer peticiones HTTP con autenticación
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
 interface FetchOptions extends RequestInit {
   headers?: Record<string, string>;
 }
@@ -23,7 +21,7 @@ export async function apiCall(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const url = endpoint.startsWith('http') ? endpoint : `${API_URL}${endpoint}`;
+  const url = endpoint.startsWith('http') ? endpoint : endpoint;
 
   try {
     const response = await fetch(url, {

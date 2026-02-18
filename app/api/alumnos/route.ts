@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/services/auth.service';
 import { mockAlumnos } from '@/lib/mock-data';
 
 /**
@@ -7,18 +6,6 @@ import { mockAlumnos } from '@/lib/mock-data';
  */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-
-    if (!token) {
-      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
-    }
-
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
 
@@ -28,10 +15,10 @@ export async function GET(request: NextRequest) {
           a.NombreCompleto.toLowerCase().includes(search.toLowerCase()) ||
           a.Email?.toLowerCase().includes(search.toLowerCase())
       );
-      return NextResponse.json({ success: true, data: results });
+      return NextResponse.json(results);
     }
 
-    return NextResponse.json({ success: true, data: mockAlumnos });
+    return NextResponse.json(mockAlumnos);
   } catch (error: any) {
     console.error('[API] Error en GET alumnos:', error);
     return NextResponse.json(
@@ -46,18 +33,6 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-
-    if (!token) {
-      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || !['admin', 'secretaria'].includes(decoded.role)) {
-      return NextResponse.json({ error: 'Permiso denegado' }, { status: 403 });
-    }
-
     const body = await request.json();
 
     if (!body.NombreCompleto || !body.FechaNacimiento) {
@@ -73,7 +48,9 @@ export async function POST(request: NextRequest) {
       FechaIngreso: new Date(),
     };
 
-    return NextResponse.json({ success: true, data: newAlumno }, { status: 201 });
+    mockAlumnos.push(newAlumno);
+
+    return NextResponse.json(newAlumno, { status: 201 });
   } catch (error: any) {
     console.error('[API] Error en POST alumnos:', error);
     return NextResponse.json(

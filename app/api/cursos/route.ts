@@ -1,32 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/services/auth.service';
 import { mockCursos } from '@/lib/mock-data';
-import { getAllCursos, getCursosByTipo, createCurso } from '@/lib/services/cursos.service';
 
 /**
  * GET /api/cursos - Lista todos los cursos o filtra por tipo
  */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-
-    if (!token) {
-      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
-    }
-
     const searchParams = request.nextUrl.searchParams;
     const tipo = searchParams.get('tipo') as 'fundamentacion' | 'pedagogia' | 'dogmatico' | null;
     const search = searchParams.get('search');
 
     if (tipo) {
-      const cursos = await getCursosByTipo(tipo);
-      return NextResponse.json({ success: true, data: cursos });
+      const cursos = mockCursos.filter((c: any) => c.Tipo === tipo);
+      return NextResponse.json(cursos);
     }
 
     if (search) {
@@ -35,11 +21,10 @@ export async function GET(request: NextRequest) {
           c.Nombre.toLowerCase().includes(search.toLowerCase()) ||
           c.Descripcion?.toLowerCase().includes(search.toLowerCase())
       );
-      return NextResponse.json({ success: true, data: results });
+      return NextResponse.json(results);
     }
 
-    const cursos = await getAllCursos();
-    return NextResponse.json({ success: true, data: cursos });
+    return NextResponse.json(mockCursos);
   } catch (error: any) {
     console.error('[API] Error en GET cursos:', error);
     return NextResponse.json(
@@ -54,18 +39,6 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-
-    if (!token) {
-      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || !['admin', 'secretaria'].includes(decoded.role)) {
-      return NextResponse.json({ error: 'Permiso denegado' }, { status: 403 });
-    }
-
     const body = await request.json();
 
     if (!body.Nombre || !body.Tipo) {
@@ -75,8 +48,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newCurso = await createCurso(body);
-    return NextResponse.json({ success: true, data: newCurso }, { status: 201 });
+    const newCurso = {
+      CursoId: Math.max(...mockCursos.map((c: any) => c.CursoId || 0)) + 1,
+      ...body,
+    };
+
+    mockCursos.push(newCurso);
+    return NextResponse.json(newCurso, { status: 201 });
   } catch (error: any) {
     console.error('[API] Error en POST cursos:', error);
     return NextResponse.json(

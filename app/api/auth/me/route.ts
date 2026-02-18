@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserById } from '@/lib/services/auth.service';
-import { verifyToken } from '@/lib/services/auth.service';
+import { verifyTokenEdge } from '@/lib/auth-edge';
+import { mockUsers } from '@/lib/mock-data';
 
 /**
  * GET /api/auth/me - Obtiene la información del usuario autenticado
@@ -17,10 +17,10 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = verifyToken(token);
+    const decoded = await verifyTokenEdge(token);
 
-    // Obtener el usuario de la BD para verificar que sigue siendo válido
-    const user = await getUserById(decoded.userId);
+    // Obtener el usuario de mock data
+    const user = mockUsers.find((u) => u.UserId === decoded.userId);
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },

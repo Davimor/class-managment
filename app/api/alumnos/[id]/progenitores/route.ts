@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProgenitoresToAlumno } from '@/lib/services/alumnos.service';
-import { verifyToken } from '@/lib/services/auth.service';
+import { verifyAuth } from '@/lib/api-auth';
 
 /**
  * GET /api/alumnos/[id]/progenitores - Obtiene los progenitores de un alumno
@@ -11,15 +11,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-
-    // Verificar autenticación
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    verifyToken(token); // Lanzará error si es inválido
+    const { decoded, error } = await verifyAuth(request);
+    if (error) return error;
 
     if (!id) {
       return NextResponse.json({ error: 'ID de alumno requerido' }, { status: 400 });

@@ -2,7 +2,6 @@
  * Servicio para gestión de Cursos
  */
 
-import { query, queryOne } from '@/lib/db';
 import { Curso, AlumnoCurso, CreateCursoRequest, UpdateCursoRequest } from '@/lib/types';
 import { mockCursos } from '@/lib/mock-data';
 
