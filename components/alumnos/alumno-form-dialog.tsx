@@ -127,6 +127,50 @@ export function AlumnoFormDialog({
     }
   }
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const data = {
+        FirstName: formData.FirstName,
+        LastName: formData.LastName,
+        Email: formData.Email || null,
+        Phone: formData.Phone || null,
+        DocumentType: formData.DocumentType || null,
+        DocumentNumber: formData.DocumentNumber || null,
+        DateOfBirth: formData.DateOfBirth ? new Date(formData.DateOfBirth) : null,
+        Gender: formData.Gender || null,
+        Address: formData.Address || null,
+        City: formData.City || null,
+        PostalCode: formData.PostalCode || null,
+        SpecialNeeds: formData.SpecialNeeds || null,
+        MedicalInfo: formData.MedicalInfo || null,
+      };
+
+      let result;
+      if (alumno?.AlumnoId) {
+        result = await apiPut(`/api/alumnos/${alumno.AlumnoId}`, data);
+      } else {
+        result = await apiPost('/api/alumnos', data);
+      }
+
+      if (result) {
+        onSuccess(result);
+        onOpenChange(false);
+      }
+    } catch (error: any) {
+      console.error('[v0] Error saving alumno:', error);
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -266,48 +310,6 @@ export function AlumnoFormDialog({
     </Dialog>
   );
 }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const data = {
-        FirstName: formData.FirstName,
-        LastName: formData.LastName,
-        Email: formData.Email || null,
-        Phone: formData.Phone || null,
-        DocumentType: formData.DocumentType || null,
-        DocumentNumber: formData.DocumentNumber || null,
-        DateOfBirth: formData.DateOfBirth ? new Date(formData.DateOfBirth) : null,
-        Gender: formData.Gender || null,
-        Address: formData.Address || null,
-        City: formData.City || null,
-        PostalCode: formData.PostalCode || null,
-        SpecialNeeds: formData.SpecialNeeds || null,
-        MedicalInfo: formData.MedicalInfo || null,
-      };
-
-      let result;
-      if (alumno) {
-        result = await apiPut(`/api/alumnos/${alumno.AlumnoId}`, data);
-      } else {
-        result = await apiPost('/api/alumnos', data);
-      }
-
-      onSuccess(result);
-      onOpenChange(false);
-    } catch (error: any) {
-      console.error('[v0] Error saving alumno:', error);
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
