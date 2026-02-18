@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit2, Trash2, Users } from 'lucide-react';
+import { AsignarAlumnoDialog } from '@/components/cursos/asignar-alumno-dialog';
 
 interface Clase {
   ClaseId: number;
@@ -31,6 +32,7 @@ export default function CursosPage() {
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState(2024);
+  const [selectedClase, setSelectedClase] = useState<{ claseId: number; claseName: string } | null>(null);
 
   useEffect(() => {
     // Mock data - en producción obtener de la API
@@ -171,17 +173,26 @@ export default function CursosPage() {
                     {curso.Clases.map(clase => (
                       <Card key={clase.ClaseId} className="p-4 border-l-4 border-blue-500">
                         <div className="flex items-center justify-between">
-                          <div>
+                          <div className="flex-1">
                             <p className="font-semibold text-gray-900">{clase.Nombre}</p>
                             <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
                               <Users className="w-4 h-4" />
                               {clase.AlumnosCount} / {clase.CapacidadMaxima} alumnos
                             </p>
                           </div>
-                          <div className="text-right">
+                          <div className="flex flex-col items-end gap-2">
                             <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                              <p className="font-bold text-blue-600">{Math.round((clase.AlumnosCount / clase.CapacidadMaxima) * 100)}%</p>
+                              <p className="font-bold text-blue-600 text-sm">{Math.round((clase.AlumnosCount / clase.CapacidadMaxima) * 100)}%</p>
                             </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 text-xs"
+                              onClick={() => setSelectedClase({ claseId: clase.ClaseId, claseName: clase.Nombre })}
+                            >
+                              <Plus className="w-3 h-3" />
+                              Asignar
+                            </Button>
                           </div>
                         </div>
                       </Card>
@@ -200,6 +211,22 @@ export default function CursosPage() {
             </Card>
           ))}
         </div>
+
+        {/* Dialog para asignar alumnos */}
+        {selectedClase && (
+          <AsignarAlumnoDialog
+            open={!!selectedClase}
+            onOpenChange={(open) => {
+              if (!open) setSelectedClase(null);
+            }}
+            claseId={selectedClase.claseId}
+            claseName={selectedClase.claseName}
+            onSuccess={() => {
+              // Actualizar datos si es necesario
+              console.log('[v0] Alumnos asignados exitosamente');
+            }}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
