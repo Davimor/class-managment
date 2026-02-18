@@ -36,26 +36,32 @@ export function AsignarAlumnoDialog({
   onSuccess,
 }: AsignarAlumnoDialogProps) {
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
+  const [clases, setClases] = useState<any[]>([]);
   const [selectedAlumnos, setSelectedAlumnos] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAssigned, setShowAssigned] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
-      loadAlumnos();
+      loadData();
     }
   }, [open]);
 
-  async function loadAlumnos() {
+  async function loadData() {
     try {
-      const data = await apiGet('/api/alumnos');
-      setAlumnos(data || []);
+      const [alumnosData, clasesData] = await Promise.all([
+        apiGet('/api/alumnos'),
+        apiGet('/api/clases'),
+      ]);
+      setAlumnos(alumnosData || []);
+      setClases(clasesData || []);
     } catch (error: any) {
-      console.error('[v0] Error loading alumnos:', error);
+      console.error('[v0] Error loading data:', error);
       toast({
         title: 'Error',
-        description: 'No se pudieron cargar los alumnos',
+        description: 'No se pudieron cargar los datos',
         variant: 'destructive',
       });
     }
@@ -63,8 +69,21 @@ export function AsignarAlumnoDialog({
 
   const filteredAlumnos = alumnos.filter((alumno) => {
     const nombreCompleto = alumno.NombreCompleto || `${alumno.FirstName} ${alumno.LastName}`;
-    return nombreCompleto.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = nombreCompleto.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Si no está en modo "mostrar asignados", filtrar solo los no asignados
+    if (!showAssigned) {
+      return matchesSearch && !alumno.ClaseId;
+    }
+    
+    return matchesSearch;
   });
+
+  function getNombreClase(claseId?: number) {
+    if (!claseId) return null;
+    const clase = clases.find(c => c.ClaseId === claseId || c.ClaseId === claseId);
+    return clase?.Nombre || `Clase ${claseId}`;
+  }
 
   async function handleAssign() {
     if (selectedAlumnos.length === 0) {
@@ -125,10 +144,25 @@ export function AsignarAlumnoDialog({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
+          {/* Checkbox para mostrar todos */}
+          <label className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+            <input
+              type="checkbox"
+              checked={showAssigned}
+              onChange={(e) => setShowAssigned(e.target.checked)}
+              className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+            />
+            <span className="text-sm text-gray-700">
+              Mostrar todos los alumnos (incluidos los ya asignados)
+            </span>
+          </label>
+
           {/* Lista de alumnos */}
           <div className="space-y-2 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-4">
             {filteredAlumnos.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No hay alumnos disponibles</p>
+              <p className="text-gray-500 text-center py-4">
+                {showAssigned ? 'No hay alumnos' : 'No hay alumnos sin asignar'}
+              </p>
             ) : (
               filteredAlumnos.map((alumno) => (
                 <label
@@ -149,14 +183,16 @@ export function AsignarAlumnoDialog({
                     }}
                     className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
                   />
-                  <span className="ml-3 text-sm">
-                    {alumno.NombreCompleto || `${alumno.FirstName} ${alumno.LastName}`}
+                  <div className="ml-3 flex-1">
+                    <p className="text-sm">
+                      {alumno.NombreCompleto || `${alumno.FirstName} ${alumno.LastName}`}
+                    </p>
                     {alumno.ClaseId && (
-                      <span className="ml-2 text-xs text-gray-500">
-                        (ya asignado a otra clase)
-                      </span>
+                      <p className="text-xs text-gray-500">
+                        Asignado a: {getNombreClase(alumno.ClaseId)}
+                      </p>
                     )}
-                  </span>
+                  </div>
                 </label>
               ))
             )}
