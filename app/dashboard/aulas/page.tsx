@@ -54,7 +54,17 @@ export default function AulasPage() {
     try {
       setIsLoading(true);
       const data = await apiGet('/api/aulas');
-      setAulas(data || []);
+      
+      // Transformar datos para asegurar que tienen los campos esperados
+      const transformedData = (data || []).map((aula: any) => ({
+        ...aula,
+        // Usar ClaseId como AulaId si no existe
+        AulaId: aula.AulaId || aula.ClaseId,
+        // Asegurar que existe Name
+        Name: aula.Name || aula.Nombre,
+      }));
+      
+      setAulas(transformedData);
     } catch (error: any) {
       console.error('[v0] Error loading aulas:', error);
       toast({
@@ -74,7 +84,7 @@ export default function AulasPage() {
 
     try {
       await apiDelete(`/api/aulas/${aulaId}`);
-      setAulas(aulas.filter((a) => a.AulaId !== aulaId));
+      setAulas(aulas.filter((a) => (a.AulaId || a.ClaseId) !== aulaId));
       toast({
         title: 'Éxito',
         description: 'Aula eliminada correctamente',
@@ -104,8 +114,10 @@ export default function AulasPage() {
   }
 
   function handleFormSuccess(aula: Aula) {
+    const aulaId = aula.AulaId || (aula as any).ClaseId;
     if (editingAula) {
-      setAulas(aulas.map((a) => (a.AulaId === aula.AulaId ? aula : a)));
+      const editingId = editingAula.AulaId || (editingAula as any).ClaseId;
+      setAulas(aulas.map((a) => ((a.AulaId || (a as any).ClaseId) === editingId ? aula : a)));
     } else {
       setAulas([...aulas, aula]);
     }
