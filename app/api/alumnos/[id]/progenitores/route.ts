@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProgenitoresToAlumno } from '@/lib/services/alumnos.service';
-import { verifyAuth } from '@/lib/api-auth';
+import { mockAlumnos, mockProgenitores } from '@/lib/mock-data';
 
 /**
  * GET /api/alumnos/[id]/progenitores - Obtiene los progenitores de un alumno
@@ -11,15 +10,19 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { decoded, error } = await verifyAuth(request);
-    if (error) return error;
+    const alumnoId = parseInt(id);
 
-    if (!id) {
-      return NextResponse.json({ error: 'ID de alumno requerido' }, { status: 400 });
+    // Verificar que el alumno existe
+    const alumno = mockAlumnos.find(a => a.AlumnoId === alumnoId);
+    if (!alumno) {
+      return NextResponse.json(
+        { error: 'Alumno no encontrado' },
+        { status: 404 }
+      );
     }
 
-    const progenitores = await getProgenitoresToAlumno(parseInt(id));
-    return NextResponse.json(progenitores);
+    // Retornar todos los progenitores (en desarrollo, retornamos los disponibles)
+    return NextResponse.json(mockProgenitores);
   } catch (error: any) {
     console.error('[API] Error en GET alumnos progenitores:', error);
     return NextResponse.json(
