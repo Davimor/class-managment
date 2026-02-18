@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { mockClases } from '@/lib/mock-data';
 
 /**
- * GET /api/aulas - Obtiene todas las aulas
+ * GET /api/aulas - Obtiene todas las aulas del sistema
  */
 export async function GET(request: NextRequest) {
   try {
